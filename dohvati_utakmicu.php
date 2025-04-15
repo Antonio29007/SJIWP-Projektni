@@ -12,6 +12,18 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
         return $result->num_rows > 0 ? $result->fetch_assoc()[$id_column] : null;
     }
 
+    // Funkcija za dobivanje ID suca na osnovu punog imena
+    function getSudacID($conn, $puno_ime) {
+        $parts = explode(' ', $puno_ime, 2);
+        if(count($parts) < 2) return null;
+        
+        $query = $conn->prepare("SELECT ID_sudca FROM sudci WHERE ime = ? AND prezime = ?");
+        $query->bind_param("ss", $parts[0], $parts[1]);
+        $query->execute();
+        $result = $query->get_result();
+        return $result->num_rows > 0 ? $result->fetch_assoc()['ID_sudca'] : null;
+    }
+
     // Obrada podataka iz forme
     $errors = [];
     
@@ -23,20 +35,21 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     
     // Dohvaćanje ID-eva
     $dvorana_ID = getID($conn, 'dvorana', 'naziv', $_POST['dvorana_naziv'] ?? '', 'ID_dvorane');
-    $sudac_ID = getID($conn, 'sudci', 'ime', $_POST['sudac_ime'] ?? '', 'ID_sudca');
+    $sudac_ID = getSudacID($conn, $_POST['sudac'] ?? '');
     $klub_ID_domaci = getID($conn, 'klub', 'naziv', $_POST['domaci_klub'] ?? '', 'ID_kluba');
     $klub_ID_gosti = getID($conn, 'klub', 'naziv', $_POST['gosti_klub'] ?? '', 'ID_kluba');
     
     // Provjera obaveznih podataka
     if(!$datum_i_vrijeme_utakmice) $errors[] = "Datum i vrijeme su obavezni";
-    if(!$dvorana_ID) $errors[] = "Nepoznata dvorana: " . ($_POST['dvorana_naziv'] ?? '');
-    if(!$sudac_ID) $errors[] = "Nepoznat sudac: " . ($_POST['sudac_ime'] ?? '');
-    if(!$klub_ID_domaci) $errors[] = "Nepoznat domaći klub: " . ($_POST['domaci_klub'] ?? '');
-    if(!$klub_ID_gosti) $errors[] = "Nepoznat gostujući klub: " . ($_POST['gosti_klub'] ?? '');
+    if(!$dvorana_ID) $errors[] = "Nepoznata dvorana: " . htmlspecialchars($_POST['dvorana_naziv'] ?? '');
+    if(!$sudac_ID) $errors[] = "Nepoznat sudac: " . htmlspecialchars($_POST['sudac'] ?? '');
+    if(!$klub_ID_domaci) $errors[] = "Nepoznat domaći klub: " . htmlspecialchars($_POST['domaci_klub'] ?? '');
+    if(!$klub_ID_gosti) $errors[] = "Nepoznat gostujući klub: " . htmlspecialchars($_POST['gosti_klub'] ?? '');
     
     // Ako ima grešaka, preusmjeri natrag
     if(!empty($errors)) {
         $_SESSION['errors'] = $errors;
+        $_SESSION['old'] = $_POST; // Spremi unesene podatke za ponovno prikazivanje
         header("Location: utakmice.php?error=1");
         exit();
     }
@@ -48,7 +61,9 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $stmt = $conn->prepare($sql);
     if($stmt === false) {
-        die("Greška u pripremi upita: " . $conn->error);
+        $_SESSION['error'] = "Greška u pripremi upita: " . htmlspecialchars($conn->error);
+        header("Location: utakmice.php?error=1");
+        exit();
     }
 
     // Povezivanje parametara
@@ -64,42 +79,11 @@ if($_SERVER["REQUEST_METHOD"] == "POST") {
     );
 
     if($stmt->execute()) {
-        $utakmica_ID = $conn->insert_id;
-        
-        // Unos strijelaca ako su uneseni svi potrebni podaci
-        if(!empty($_POST['igrac_ime']) && !empty($_POST['igrac_prezime']) && !empty($_POST['broj_golova'])) {
-            $igrac_ime = $_POST['igrac_ime'];
-            $igrac_prezime = $_POST['igrac_prezime'];
-            $broj_golova = intval($_POST['broj_golova']);
-            
-            // Provjera postoji li igrač u bazi
-            $igrac_query = $conn->prepare("SELECT ID_igraca FROM igraci WHERE ime = ? AND prezime = ?");
-            $igrac_query->bind_param("ss", $igrac_ime, $igrac_prezime);
-            $igrac_query->execute();
-            $igrac_result = $igrac_query->get_result();
-            
-            if($igrac_result->num_rows > 0) {
-                $igrac_row = $igrac_result->fetch_assoc();
-                $igrac_ID = $igrac_row['ID_igraca'];
-                
-                $strijelac_sql = "INSERT INTO strijelci (utakmica_ID, igrac_ID, broj_golova) VALUES (?, ?, ?)";
-                $strijelac_stmt = $conn->prepare($strijelac_sql);
-                $strijelac_stmt->bind_param("iii", $utakmica_ID, $igrac_ID, $broj_golova);
-                
-                if(!$strijelac_stmt->execute()) {
-                    $_SESSION['warning'] = "Utakmica je spremljena, ali nije uspio unos strijelca: " . $strijelac_stmt->error;
-                }
-                $strijelac_stmt->close();
-            } else {
-                $_SESSION['warning'] = "Utakmica je spremljena, ali strijelac '" . htmlspecialchars($igrac_ime . " " . $igrac_prezime) . "' nije pronađen u bazi";
-            }
-            $igrac_query->close();
-        }
-        
+        $_SESSION['success'] = "Utakmica uspješno dodana!";
         header("Location: utakmice.php?success=1");
         exit();
     } else {
-        $_SESSION['error'] = "Greška pri unosu utakmice: " . $stmt->error;
+        $_SESSION['error'] = "Greška pri unosu utakmice: " . htmlspecialchars($stmt->error);
         header("Location: utakmice.php?error=1");
         exit();
     }
