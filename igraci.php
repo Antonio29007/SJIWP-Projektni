@@ -167,7 +167,7 @@ $klubovi_options = mysqli_query($conn, "SELECT ID_kluba, naziv FROM klub");
                     <h5 class="modal-title" id="dodajIgracaModalLabel"><i class="bi bi-plus-circle"></i> Dodaj novog igrača</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="dohvati_igraca.php" method="POST">
+                <<form action="dohvati_igraca.php" method="POST">
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="ime" class="form-label">Ime</label>
@@ -212,6 +212,98 @@ $klubovi_options = mysqli_query($conn, "SELECT ID_kluba, naziv FROM klub");
             </div>
         </div>
     </div>
+    <!-- Modal za uređivanje igrača -->
+<div class="modal fade" id="editIgracModal" tabindex="-1" aria-labelledby="editIgracModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editIgracModalLabel"><i class="bi bi-pencil"></i> Uredi igrača</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="edit_igrac.php" method="POST">
+                <input type="hidden" name="ID_igraca" id="edit_ID_igraca">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_ime" class="form-label">Ime</label>
+                        <input type="text" class="form-control" id="edit_ime" name="ime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_prezime" class="form-label">Prezime</label>
+                        <input type="text" class="form-control" id="edit_prezime" name="prezime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_datum_rodenja" class="form-label">Datum rođenja</label>
+                        <input type="date" class="form-control" id="edit_datum_rodenja" name="datum_rodenja" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_pozicija" class="form-label">Pozicija</label>
+                        <select class="form-select" id="edit_pozicija" name="pozicija" required>
+                            <option value="">Odaberi poziciju</option>
+                            <option value="golman">Golman</option>
+                            <option value="lijevo krilo">Lijevo krilo</option>
+                            <option value="desno krilo">Desno krilo</option>
+                            <option value="lijevi vanjski">Lijevi vanjski</option>
+                            <option value="desni vanjski">Desni vanjski</option>
+                            <option value="srednji vanjski">Srednji vanjski</option>
+                            <option value="pivot">Pivot</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_klub_ID" class="form-label">Klub</label>
+                        <select class="form-select" id="edit_klub_ID" name="klub_ID" required>
+                            <option value="">Odaberi klub</option>
+                            <?php 
+                            // Reset pointer for klubovi_options
+                            mysqli_data_seek($klubovi_options, 0);
+                            while ($klub = mysqli_fetch_assoc($klubovi_options)): ?>
+                                <option value="<?= htmlspecialchars($klub['ID_kluba']) ?>"><?= htmlspecialchars($klub['naziv']) ?></option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Zatvori</button>
+                    <button type="submit" name="azuriraj_igraca" class="btn btn-primary"><i class="bi bi-save"></i> Spremi promjene</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript za popunjavanje modala s podacima -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Kada se klikne na link za uređivanje
+    document.querySelectorAll('a[href^="edit_igrac.php"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Dohvati ID igrača iz URL-a
+            const url = new URL(this.href);
+            const id = url.searchParams.get('id');
+            
+            // AJAX za dohvaćanje podataka o igraču
+            fetch(`dohvati_igraca.php?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Popuni formu u modalu
+                    document.getElementById('edit_ID_igraca').value = data.ID_igraca;
+                    document.getElementById('edit_ime').value = data.ime;
+                    document.getElementById('edit_prezime').value = data.prezime;
+                    document.getElementById('edit_datum_rodenja').value = data.datum_rodenja;
+                    document.getElementById('edit_pozicija').value = data.pozicija;
+                    document.getElementById('edit_klub_ID').value = data.klub_ID;
+                    
+                    // Prikaži modal
+                    const modal = new bootstrap.Modal(document.getElementById('editIgracModal'));
+                    modal.show();
+                })
+                .catch(error => console.error('Greška:', error));
+        });
+    });
+});
+</script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
