@@ -1,131 +1,117 @@
 <?php
 include("db_connection.php");
 session_start();
-
-// SQL query to get clubs with total points
-$sql = "SELECT naziv, ukupni_bodovi FROM klub ORDER BY ukupni_bodovi DESC";
-$result = mysqli_query($conn, $sql);
-
-if (mysqli_num_rows($result) > 0) {
-    $klubovi = [];
-    while ($row = mysqli_fetch_assoc($result)) {
-        $klubovi[] = $row;
-    }
-} else {
-    $klubovi = [];
-}
+$klubovi = mysqli_fetch_all(mysqli_query($conn,
+    "SELECT naziv,ukupni_bodovi FROM klub ORDER BY ukupni_bodovi DESC"), MYSQLI_ASSOC);
+$max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
 ?>
-
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rukometna Liga - Ljestvica</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-    <style>
-        .table-responsive { overflow-x: auto; }
-        .card { transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rukometna Liga — Ljestvica</title>
+<?php include("style.php"); ?>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Lijeva navigacija -->
-            <div class="col-md-3 col-lg-2 d-flex flex-column flex-shrink-0 p-3 bg-primary text-white" style="height: 100vh;">
-                <a href="index.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                    <i class="bi bi-trophy-fill fs-4 me-2"></i>
-                    <span class="fs-4">Rukometna Liga</span>
-                </a>
-                <hr class="border border-white">
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="index.php" class="nav-link text-white">
-                            <i class="bi bi-house-door me-2"></i>
-                            Početna
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="utakmice.php" class="nav-link text-white">
-                            <i class="bi bi-calendar-event me-2"></i>
-                            Utakmice
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="timovi.php" class="nav-link text-white">
-                            <i class="bi bi-people-fill me-2"></i>
-                            Timovi
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="igraci.php" class="nav-link text-white">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Igrači
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="ljestvica.php" class="nav-link text-white bg-dark active">
-                            <i class="bi bi-list-ol me-2"></i>
-                            Ljestvica
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<?php include("sidebar.php"); ?>
+<div class="page">
+<div class="page-inner">
 
-            <!-- Glavni sadržaj -->
-            <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
-                <?php if (isset($_GET['success'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show mt-3">
-                        <?= isset($_SESSION['success']) ? $_SESSION['success'] : 'Operacija uspješno izvršena!' ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    <?php unset($_SESSION['success']); ?>
-                <?php endif; ?>
-
-                <div class="d-flex justify-content-between align-items-center mb-4 mt-4">
-                    <h1><i class="bi bi-list-ol"></i> Ljestvica Klubova</h1>
-                </div>
-
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>Mjesto</th>
-                                        <th>Tim</th>
-                                        <th>Bodovi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (!empty($klubovi)): ?>
-                                        <?php $position = 1; ?>
-                                        <?php foreach ($klubovi as $klub): ?>
-                                            <tr>
-                                                <th scope="row"><?= $position++ ?></th>
-                                                <td><?= htmlspecialchars($klub['naziv']) ?></td>
-                                                <td><?= htmlspecialchars($klub['ukupni_bodovi']) ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td colspan="3" class="text-center">Nema podataka o klubovima</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="pg-head">
+    <div>
+      <div class="pg-eyebrow">Sezona 2024/25</div>
+      <h1 class="pg-title">Ljestvica</h1>
     </div>
+  </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <?php if(isset($_GET['success'])): ?>
+    <div class="alert alert-ok">✓ <?=isset($_SESSION['success'])?htmlspecialchars($_SESSION['success']):'Uspješno!'?></div>
+    <?php unset($_SESSION['success']); ?>
+  <?php endif; ?>
+
+  <?php if(!empty($klubovi)): ?>
+
+  <!-- TOP 3 PODIUM -->
+  <?php if(count($klubovi)>=3): ?>
+  <div class="podium" style="animation:fadeUp .4s ease">
+    <div class="podium-card p2">
+      <span class="podium-medal">🥈</span>
+      <div class="podium-name"><?=htmlspecialchars($klubovi[1]['naziv'])?></div>
+      <div class="podium-pts"><?=$klubovi[1]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
+    </div>
+    <div class="podium-card p1" style="transform:translateY(-12px)">
+      <span class="podium-medal">🥇</span>
+      <div class="podium-name"><?=htmlspecialchars($klubovi[0]['naziv'])?></div>
+      <div class="podium-pts"><?=$klubovi[0]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
+    </div>
+    <div class="podium-card p3">
+      <span class="podium-medal">🥉</span>
+      <div class="podium-name"><?=htmlspecialchars($klubovi[2]['naziv'])?></div>
+      <div class="podium-pts"><?=$klubovi[2]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- FULL TABLE -->
+  <div class="card" style="animation:fadeUp .4s .15s ease both">
+    <div class="card-head">
+      <span class="card-head-title">Poredak svih klubova</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th style="width:54px">Pos.</th>
+            <th>Klub</th>
+            <th>Bodovi</th>
+            <th style="width:200px">Omjer</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach($klubovi as $pos=>$k): ?>
+          <tr>
+            <td>
+              <?php if($pos===0): ?>
+                <span style="font-family:'Anton',sans-serif;font-size:20px;color:#fbbf24">1</span>
+              <?php elseif($pos===1): ?>
+                <span style="font-family:'Anton',sans-serif;font-size:18px;color:#94a3b8">2</span>
+              <?php elseif($pos===2): ?>
+                <span style="font-family:'Anton',sans-serif;font-size:18px;color:#cd7f32">3</span>
+              <?php else: ?>
+                <span style="font-family:'Anton',sans-serif;font-size:16px;color:var(--c-muted)"><?=$pos+1?></span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <span style="font-weight:600;font-size:14px"><?=htmlspecialchars($k['naziv'])?></span>
+              <?php if($pos===0): ?><span style="margin-left:8px;font-size:11px">🏆</span><?php endif; ?>
+            </td>
+            <td>
+              <span style="display:inline-block;background:rgba(200,241,53,0.1);border:1px solid rgba(200,241,53,0.2);
+                color:var(--c-lime);font-family:'Anton',sans-serif;font-size:16px;
+                padding:3px 14px;border-radius:100px">
+                <?=$k['ukupni_bodovi']?>
+              </span>
+            </td>
+            <td>
+              <div style="height:5px;background:var(--c-border2);border-radius:3px;overflow:hidden">
+                <div style="height:5px;background:<?=$pos===0?'var(--c-lime)':($pos===1?'#94a3b8':($pos===2?'#cd7f32':'var(--c-muted)'))?>; 
+                  border-radius:3px;width:<?=round(($k['ukupni_bodovi']/max($max_b,1))*100)?>%"></div>
+              </div>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <?php else: ?>
+    <div style="text-align:center;padding:60px;color:var(--c-muted2)">Nema podataka o klubovima</div>
+  <?php endif; ?>
+
+</div>
+</div>
 </body>
 </html>
-<?php
-mysqli_close($conn);
-?>
+<?php mysqli_close($conn); ?>
