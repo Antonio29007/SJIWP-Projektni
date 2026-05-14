@@ -7,8 +7,12 @@ $isAdmin = isAdmin();
 $utakmice = mysqli_fetch_all(mysqli_query($conn,
     "SELECT u.ID_utakmice, u.datum_i_vrijeme_utakmice,
      d.naziv AS dvorana, CONCAT(s.ime,' ',s.prezime) AS sudac,
+<<<<<<< HEAD
      k1.naziv AS domaci, k1.logo AS domaci_logo,
      k2.naziv AS gosti, k2.logo AS gosti_logo,
+=======
+     k1.naziv AS domaci, k2.naziv AS gosti,
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
      u.domaci_golovi, u.gosti_golovi
      FROM utakmica u
      JOIN dvorana d ON u.dvorana_ID=d.ID_dvorane
@@ -17,9 +21,15 @@ $utakmice = mysqli_fetch_all(mysqli_query($conn,
      JOIN klub k2 ON u.klub_ID_gosti=k2.ID_kluba
      ORDER BY u.datum_i_vrijeme_utakmice DESC"), MYSQLI_ASSOC);
 
+<<<<<<< HEAD
 $klubovi = mysqli_query($conn,"SELECT ID_kluba, naziv, logo FROM klub");
 $dvorane = mysqli_query($conn,"SELECT ID_dvorane, naziv FROM dvorana");
 $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_ime FROM sudci");
+=======
+$klubovi = mysqli_query($conn,"SELECT ID_kluba,naziv FROM klub");
+$dvorane = mysqli_query($conn,"SELECT ID_dvorane,naziv FROM dvorana");
+$sudci   = mysqli_query($conn,"SELECT ID_sudca,CONCAT(ime,' ',prezime) AS puno_ime FROM sudci");
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 ?>
 <!DOCTYPE html>
 <html lang="hr">
@@ -28,6 +38,7 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rukometna Liga — Utakmice</title>
 <?php include("style.php"); ?>
+<<<<<<< HEAD
 <style>
   .team-with-logo {
     display: flex;
@@ -49,6 +60,8 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
     padding: 2px;
   }
 </style>
+=======
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 </head>
 <body>
 <?php include("sidebar.php"); ?>
@@ -57,6 +70,7 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
 
   <div class="pg-head">
     <div>
+<<<<<<< HEAD
    
       <h1 class="pg-title">Utakmice</h1>
     </div>
@@ -66,6 +80,15 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
       Nova utakmica
     </button>
     <?php endif; ?>
+=======
+      <div class="pg-eyebrow">Sezona 2024/25</div>
+      <h1 class="pg-title">Utakmice</h1>
+    </div>
+    <button class="btn btn-lime" onclick="document.getElementById('mo-dodaj').classList.add('open')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nova utakmica
+    </button>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
   </div>
 
   <?php if(isset($_SESSION['success'])): ?>
@@ -85,17 +108,29 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
         <thead>
           <tr>
             <th>Datum</th>
+<<<<<<< HEAD
             <th>Domaći</th>
+=======
+            <th style="text-align:right">Domaći</th>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
             <th style="text-align:center">Rezultat</th>
             <th>Gosti</th>
             <th>Dvorana</th>
             <th>Sudac</th>
+<<<<<<< HEAD
             <?php if($isAdmin): ?><th style="text-align:right"></th><?php endif; ?>
+=======
+            <th style="text-align:right"></th>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
           </tr>
         </thead>
         <tbody>
         <?php if(empty($utakmice)): ?>
+<<<<<<< HEAD
           <tr><td colspan="<?= $isAdmin ? '7' : '6' ?>" style="text-align:center;padding:50px;color:var(--c-muted)">Nema utakmica</td></tr>
+=======
+          <tr><td colspan="7" style="text-align:center;padding:50px;color:var(--c-muted2)">Nema utakmica</td></tr>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
         <?php else: ?>
           <?php foreach($utakmice as $u):
             $dg=$u['domaci_golovi']; $gg=$u['gosti_golovi'];
@@ -104,6 +139,7 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
           ?>
           <tr>
             <td>
+<<<<<<< HEAD
               <div style="font-size:13px;font-weight:500;color:var(--c-text)"><?=date('d.m.Y.',strtotime($u['datum_i_vrijeme_utakmice']))?></div>
               <div style="font-size:11px;color:var(--c-muted)"><?=date('H:i',strtotime($u['datum_i_vrijeme_utakmice']))?></div>
             </td>
@@ -116,6 +152,13 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
                   <span style="font-size:20px;">🛡️</span>
                 <?php endif; ?>
               </div>
+=======
+              <div style="font-size:13px;font-weight:500;color:var(--c-white)"><?=date('d.m.Y.',strtotime($u['datum_i_vrijeme_utakmice']))?></div>
+              <div style="font-size:11px;color:var(--c-muted2)"><?=date('H:i',strtotime($u['datum_i_vrijeme_utakmice']))?></div>
+            </td>
+            <td style="text-align:right">
+              <span style="font-weight:600;color:var(--c-blue)"><?=htmlspecialchars($u['domaci'])?></span>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
             </td>
             <td style="text-align:center">
               <div class="score">
@@ -124,6 +167,7 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
                 <span class="score-a <?=$ac?>"><?=$gg?></span>
               </div>
             </td>
+<<<<<<< HEAD
             <td>
               <div class="team-with-logo">
                 <?php if(!empty($u['gosti_logo'])): ?>
@@ -137,12 +181,20 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
             <td style="font-size:13px;color:var(--c-muted)"><?=htmlspecialchars($u['dvorana'])?></td>
             <td style="font-size:13px;color:var(--c-muted)"><?=htmlspecialchars($u['sudac'])?></td>
             <?php if($isAdmin): ?>
+=======
+            <td><span style="font-weight:500;color:var(--c-muted2)"><?=htmlspecialchars($u['gosti'])?></span></td>
+            <td style="font-size:13px;color:var(--c-muted2)"><?=htmlspecialchars($u['dvorana'])?></td>
+            <td style="font-size:13px;color:var(--c-muted2)"><?=htmlspecialchars($u['sudac'])?></td>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
             <td style="text-align:right">
               <a href="edit_utakmica.php?id=<?=$u['ID_utakmice']?>" class="icon-btn edit" title="Uredi">
                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </a>
             </td>
+<<<<<<< HEAD
             <?php endif; ?>
+=======
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
           </tr>
           <?php endforeach; ?>
         <?php endif; ?>
@@ -154,7 +206,10 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
 </div>
 </div>
 
+<<<<<<< HEAD
 <?php if($isAdmin): ?>
+=======
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 <!-- MODAL: Nova utakmica -->
 <div class="overlay" id="mo-dodaj" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal modal-lg">
@@ -166,7 +221,11 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
           <label>Domaći klub</label>
           <select name="domaci_klub" required>
             <option value="">Odaberi klub</option>
+<<<<<<< HEAD
             <?php mysqli_data_seek($klubovi, 0); while($k=mysqli_fetch_assoc($klubovi)): ?>
+=======
+            <?php while($k=mysqli_fetch_assoc($klubovi)): ?>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
               <option value="<?=htmlspecialchars($k['naziv'])?>"><?=htmlspecialchars($k['naziv'])?></option>
             <?php endwhile; ?>
           </select>
@@ -175,7 +234,11 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
           <label>Gostujući klub</label>
           <select name="gosti_klub" required>
             <option value="">Odaberi klub</option>
+<<<<<<< HEAD
             <?php mysqli_data_seek($klubovi, 0); while($k=mysqli_fetch_assoc($klubovi)): ?>
+=======
+            <?php mysqli_data_seek($klubovi,0); while($k=mysqli_fetch_assoc($klubovi)): ?>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
               <option value="<?=htmlspecialchars($k['naziv'])?>"><?=htmlspecialchars($k['naziv'])?></option>
             <?php endwhile; ?>
           </select>
@@ -217,15 +280,25 @@ $sudci   = mysqli_query($conn,"SELECT ID_sudca, CONCAT(ime,' ',prezime) AS puno_
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" onclick="document.getElementById('mo-dodaj').classList.remove('open')">Odustani</button>
+<<<<<<< HEAD
         <button type="submit" class="btn btn-primary">Spremi utakmicu</button>
+=======
+        <button type="submit" class="btn btn-lime">Spremi utakmicu</button>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
       </div>
     </form>
   </div>
 </div>
+<<<<<<< HEAD
 <?php endif; ?>
 
 <script>
 document.getElementById('fUtakmica')?.addEventListener('submit',function(e){
+=======
+
+<script>
+document.getElementById('fUtakmica').addEventListener('submit',function(e){
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
   const s=this.querySelectorAll('select[name="domaci_klub"],select[name="gosti_klub"]');
   if(s[0].value&&s[0].value===s[1].value){e.preventDefault();alert('Klubovi ne mogu biti isti!');}
 });

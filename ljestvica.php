@@ -1,11 +1,17 @@
 <?php
 include("db_connection.php");
+<<<<<<< HEAD
 include("auth.php");
 requireLogin();
 $isAdmin = isAdmin();
 
 $klubovi = mysqli_fetch_all(mysqli_query($conn,
     "SELECT ID_kluba, naziv, ukupni_bodovi, logo FROM klub ORDER BY ukupni_bodovi DESC"), MYSQLI_ASSOC);
+=======
+session_start();
+$klubovi = mysqli_fetch_all(mysqli_query($conn,
+    "SELECT naziv,ukupni_bodovi FROM klub ORDER BY ukupni_bodovi DESC"), MYSQLI_ASSOC);
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
 ?>
 <!DOCTYPE html>
@@ -15,6 +21,7 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rukometna Liga — Ljestvica</title>
 <?php include("style.php"); ?>
+<<<<<<< HEAD
 <style>
   .team-with-logo-small {
     display: flex;
@@ -39,6 +46,8 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
     padding: 5px;
   }
 </style>
+=======
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 </head>
 <body>
 <?php include("sidebar.php"); ?>
@@ -47,10 +56,15 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
 
   <div class="pg-head">
     <div>
+<<<<<<< HEAD
+=======
+      <div class="pg-eyebrow">Sezona 2024/25</div>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
       <h1 class="pg-title">Ljestvica</h1>
     </div>
   </div>
 
+<<<<<<< HEAD
   <?php if(isset($_SESSION['success'])): ?>
     <div class="alert alert-ok">✓ <?=htmlspecialchars($_SESSION['success'])?></div>
     <?php unset($_SESSION['success']); ?>
@@ -61,12 +75,19 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
     </div>
     <?php unset($_SESSION['errors']); ?>
   <?php endif; ?>
+=======
+  <?php if(isset($_GET['success'])): ?>
+    <div class="alert alert-ok">✓ <?=isset($_SESSION['success'])?htmlspecialchars($_SESSION['success']):'Uspješno!'?></div>
+    <?php unset($_SESSION['success']); ?>
+  <?php endif; ?>
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
 
   <?php if(!empty($klubovi)): ?>
 
   <!-- TOP 3 PODIUM -->
   <?php if(count($klubovi)>=3): ?>
   <div class="podium" style="animation:fadeUp .4s ease">
+<<<<<<< HEAD
     <!-- 2. mjesto -->
     <div class="podium-card p2">
       <?php if(!empty($klubovi[1]['logo'])): ?>
@@ -74,10 +95,14 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
       <?php else: ?>
         <span style="font-size:50px;display:block;margin-bottom:12px;">🛡️</span>
       <?php endif; ?>
+=======
+    <div class="podium-card p2">
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
       <span class="podium-medal">🥈</span>
       <div class="podium-name"><?=htmlspecialchars($klubovi[1]['naziv'])?></div>
       <div class="podium-pts"><?=$klubovi[1]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
     </div>
+<<<<<<< HEAD
     
     <!-- 1. mjesto -->
     <div class="podium-card p1" style="transform:translateY(-12px)">
@@ -86,10 +111,14 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
       <?php else: ?>
         <span style="font-size:50px;display:block;margin-bottom:12px;">🛡️</span>
       <?php endif; ?>
+=======
+    <div class="podium-card p1" style="transform:translateY(-12px)">
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
       <span class="podium-medal">🥇</span>
       <div class="podium-name"><?=htmlspecialchars($klubovi[0]['naziv'])?></div>
       <div class="podium-pts"><?=$klubovi[0]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
     </div>
+<<<<<<< HEAD
     
     <!-- 3. mjesto -->
     <div class="podium-card p3">
@@ -98,6 +127,9 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
       <?php else: ?>
         <span style="font-size:50px;display:block;margin-bottom:12px;">🛡️</span>
       <?php endif; ?>
+=======
+    <div class="podium-card p3">
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
       <span class="podium-medal">🥉</span>
       <div class="podium-name"><?=htmlspecialchars($klubovi[2]['naziv'])?></div>
       <div class="podium-pts"><?=$klubovi[2]['ukupni_bodovi']?> <span style="font-size:14px;color:var(--c-muted2)">bod.</span></div>
@@ -135,6 +167,7 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
               <?php endif; ?>
             </td>
             <td>
+<<<<<<< HEAD
               <div class="team-with-logo-small">
                 <?php if(!empty($k['logo'])): ?>
                   <img src="<?=htmlspecialchars($k['logo'])?>" alt="<?=htmlspecialchars($k['naziv'])?>" class="team-logo-tiny">
@@ -148,13 +181,25 @@ $max_b = !empty($klubovi) ? $klubovi[0]['ukupni_bodovi'] : 1;
             <td>
               <span style="display:inline-block;background:rgba(37,99,235,0.1);border:1px solid rgba(37,99,235,0.2);
                 color:var(--c-primary);font-family:'Anton',sans-serif;font-size:16px;
+=======
+              <span style="font-weight:600;font-size:14px"><?=htmlspecialchars($k['naziv'])?></span>
+              <?php if($pos===0): ?><span style="margin-left:8px;font-size:11px">🏆</span><?php endif; ?>
+            </td>
+            <td>
+              <span style="display:inline-block;background:rgba(200,241,53,0.1);border:1px solid rgba(200,241,53,0.2);
+                color:var(--c-lime);font-family:'Anton',sans-serif;font-size:16px;
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
                 padding:3px 14px;border-radius:100px">
                 <?=$k['ukupni_bodovi']?>
               </span>
             </td>
             <td>
               <div style="height:5px;background:var(--c-border2);border-radius:3px;overflow:hidden">
+<<<<<<< HEAD
                 <div style="height:5px;background:<?=$pos===0?'var(--c-primary)':($pos===1?'#94a3b8':($pos===2?'#cd7f32':'var(--c-muted)'))?>; 
+=======
+                <div style="height:5px;background:<?=$pos===0?'var(--c-lime)':($pos===1?'#94a3b8':($pos===2?'#cd7f32':'var(--c-muted)'))?>; 
+>>>>>>> 741770cfa397667c211fc0e61fb819268addbee0
                   border-radius:3px;width:<?=round(($k['ukupni_bodovi']/max($max_b,1))*100)?>%"></div>
               </div>
             </td>
