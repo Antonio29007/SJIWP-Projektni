@@ -1,313 +1,250 @@
 <?php
 include("db_connection.php");
-session_start();
+include("auth.php");
+requireLogin();
+$isAdmin = isAdmin();
 
-// Dohvaćanje igrača iz baze podataka
-$sql = "SELECT 
-            i.ID_igraca,
-            i.ime, 
-            i.prezime, 
-            i.datum_rodenja, 
-            i.pozicija, 
-            k.naziv AS klub_naziv,
-            k.ID_kluba
-        FROM igraci i
-        JOIN klub k ON i.klub_ID = k.ID_kluba
-        ORDER BY k.naziv, i.prezime";
+$result = mysqli_query($conn,
+    "SELECT i.ID_igraca, i.ime, i.prezime, i.datum_rodenja, i.pozicija,
+     k.naziv AS klub_naziv, k.ID_kluba, k.logo AS klub_logo
+     FROM igraci i JOIN klub k ON i.klub_ID=k.ID_kluba
+     ORDER BY k.naziv, i.prezime");
 
-$result = mysqli_query($conn, $sql);
-$igraci = [];
+$igraci=[];
+while($r=mysqli_fetch_assoc($result)) $igraci[$r['klub_naziv']][]=$r;
 
-while ($row = mysqli_fetch_assoc($result)) {
-    $igraci[$row['klub_naziv']][] = $row;
+$kl_opts = mysqli_query($conn,"SELECT ID_kluba, naziv FROM klub");
+
+function pb($p){
+    $p=trim($p); $l=strtolower($p);
+    if($l==='golman') return "badge-golman";
+    if($l==='pivot')  return "badge-pivot";
+    if(str_contains($l,'krilo')) return "badge-krilo";
+    if(str_contains($l,'vanjski')) return "badge-vanjski";
+    return "badge-default";
 }
-
-// Dohvaćanje klubova za formu
-$klubovi_options = mysqli_query($conn, "SELECT ID_kluba, naziv FROM klub");
 ?>
-
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rukometna Liga - Igrači</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-    <style>
-        .table-responsive { overflow-x: auto; }
-        .card { transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rukometna Liga — Igrači</title>
+<?php include("style.php"); ?>
+<style>
+  .club-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .club-logo-small {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: white;
+    padding: 3px;
+  }
+</style>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Lijeva navigacija -->
-            <div class="col-md-3 col-lg-2 d-flex flex-column flex-shrink-0 p-3 bg-primary text-white" style="height: 100vh;">
-                <a href="index.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                    <i class="bi bi-trophy-fill fs-4 me-2"></i>
-                    <span class="fs-4">Rukometna Liga</span>
-                </a>
-                <hr class="border border-white">
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="index.php" class="nav-link text-white">
-                            <i class="bi bi-house-door me-2"></i>
-                            Početna
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="utakmice.php" class="nav-link text-white">
-                            <i class="bi bi-calendar-event me-2"></i>
-                            Utakmice
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="timovi.php" class="nav-link text-white">
-                            <i class="bi bi-people-fill me-2"></i>
-                            Timovi
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="igraci.php" class="nav-link text-white bg-dark active">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Igrači
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="ljestvica.php" class="nav-link text-white">
-                            <i class="bi bi-list-ol me-2"></i>
-                            Ljestvica
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<?php include("sidebar.php"); ?>
+<div class="page">
+<div class="page-inner">
 
-            <!-- Glavni sadržaj -->
-            <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
-                <?php if (isset($_GET['success'])): ?>
-                    <div class="alert alert-success alert-dismissible fade show mt-3">
-                        <?= isset($_SESSION['success']) ? $_SESSION['success'] : 'Operacija uspješno izvršena!' ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    <?php unset($_SESSION['success']); ?>
-                <?php endif; ?>
-
-                <?php if (isset($_SESSION['errors'])): ?>
-                    <div class="alert alert-danger alert-dismissible fade show mt-3">
-                        <?php foreach($_SESSION['errors'] as $error): ?>
-                            <?= htmlspecialchars($error) ?><br>
-                        <?php endforeach; ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    <?php unset($_SESSION['errors']); ?>
-                <?php endif; ?>
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1><i class="bi bi-person-badge"></i> Popis Igrača</h1>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dodajIgracaModal">
-                        <i class="bi bi-plus-circle"></i> Dodaj igrača
-                    </button>
-                </div>
-
-                <?php if (empty($igraci)): ?>
-                    <div class="alert alert-info">Nema podataka o igračima u bazi.</div>
-                <?php else: ?>
-                    <?php foreach ($igraci as $klub_naziv => $igraci_kluba): ?>
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><?= htmlspecialchars($klub_naziv) ?></h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Ime</th>
-                                                <th>Prezime</th>
-                                                <th>Datum rođenja</th>
-                                                <th>Pozicija</th>
-                                                <th>Akcije</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php foreach ($igraci_kluba as $igrac): ?>
-                                                <tr>
-                                                    <td><?= htmlspecialchars($igrac['ime']) ?></td>
-                                                    <td><?= htmlspecialchars($igrac['prezime']) ?></td>
-                                                    <td><?= date('d.m.Y', strtotime($igrac['datum_rodenja'])) ?></td>
-                                                    <td><?= htmlspecialchars($igrac['pozicija']) ?></td>
-                                                    <td>
-                                                        <a href="edit_igrac.php?id=<?= $igrac['ID_igraca'] ?>" class="btn btn-sm btn-warning me-2">
-                                                            <i class="bi bi-pencil"></i> Uredi
-                                                        </a>
-                                                        <a href="obrisi_igrac.php?id=<?= $igrac['ID_igraca'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Jeste li sigurni da želite obrisati ovog igrača?')">
-                                                            <i class="bi bi-trash"></i> Obriši
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
-        </div>
+  <div class="pg-head">
+    <div>
+      <h1 class="pg-title">Igrači</h1>
     </div>
+    <?php if($isAdmin): ?>
+    <button class="btn btn-primary" onclick="document.getElementById('mo-dodaj').classList.add('open')">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Dodaj igrača
+    </button>
+    <?php endif; ?>
+  </div>
 
-    <!-- Modal za dodavanje novog igrača -->
-    <div class="modal fade" id="dodajIgracaModal" tabindex="-1" aria-labelledby="dodajIgracaModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="dodajIgracaModalLabel"><i class="bi bi-plus-circle"></i> Dodaj novog igrača</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <<form action="dohvati_igraca.php" method="POST">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="ime" class="form-label">Ime</label>
-                            <input type="text" class="form-control" id="ime" name="ime" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="prezime" class="form-label">Prezime</label>
-                            <input type="text" class="form-control" id="prezime" name="prezime" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="datum_rodenja" class="form-label">Datum rođenja</label>
-                            <input type="date" class="form-control" id="datum_rodenja" name="datum_rodenja" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pozicija" class="form-label">Pozicija</label>
-                            <select class="form-select" id="pozicija" name="pozicija" required>
-                                <option value="">Odaberi poziciju</option>
-                                <option value="golman">Golman</option>
-                                <option value="lijevo krilo">Lijevo krilo</option>
-                                <option value="desno krilo">Desno krilo</option>
-                                <option value="lijevi vanjski">Lijevi vanjski</option>
-                                <option value="desni vanjski">Desni vanjski</option>
-                                <option value="srednji vanjski">Srednji vanjski</option>
-                                <option value="pivot">Pivot</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="klub_ID" class="form-label">Klub</label>
-                            <select class="form-select" id="klub_ID" name="klub_ID" required>
-                                <option value="">Odaberi klub</option>
-                                <?php while ($klub = mysqli_fetch_assoc($klubovi_options)): ?>
-                                    <option value="<?= htmlspecialchars($klub['ID_kluba']) ?>"><?= htmlspecialchars($klub['naziv']) ?></option>
-                                <?php endwhile; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Zatvori</button>
-                        <button type="submit" name="dodaj_igraca" class="btn btn-primary"><i class="bi bi-save"></i> Spremi igrača</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+  <?php if(isset($_SESSION['success'])): ?>
+    <div class="alert alert-ok">✓ <?=htmlspecialchars($_SESSION['success'])?></div>
+    <?php unset($_SESSION['success']); ?>
+  <?php endif; ?>
+  <?php if(isset($_SESSION['errors'])): ?>
+    <div class="alert alert-err">
+      <?php foreach($_SESSION['errors'] as $e): ?><?=htmlspecialchars($e)?><br><?php endforeach; ?>
     </div>
-    <!-- Modal za uređivanje igrača -->
-<div class="modal fade" id="editIgracModal" tabindex="-1" aria-labelledby="editIgracModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editIgracModalLabel"><i class="bi bi-pencil"></i> Uredi igrača</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="edit_igrac.php" method="POST">
-                <input type="hidden" name="ID_igraca" id="edit_ID_igraca">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="edit_ime" class="form-label">Ime</label>
-                        <input type="text" class="form-control" id="edit_ime" name="ime" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_prezime" class="form-label">Prezime</label>
-                        <input type="text" class="form-control" id="edit_prezime" name="prezime" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_datum_rodenja" class="form-label">Datum rođenja</label>
-                        <input type="date" class="form-control" id="edit_datum_rodenja" name="datum_rodenja" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_pozicija" class="form-label">Pozicija</label>
-                        <select class="form-select" id="edit_pozicija" name="pozicija" required>
-                            <option value="">Odaberi poziciju</option>
-                            <option value="golman">Golman</option>
-                            <option value="lijevo krilo">Lijevo krilo</option>
-                            <option value="desno krilo">Desno krilo</option>
-                            <option value="lijevi vanjski">Lijevi vanjski</option>
-                            <option value="desni vanjski">Desni vanjski</option>
-                            <option value="srednji vanjski">Srednji vanjski</option>
-                            <option value="pivot">Pivot</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_klub_ID" class="form-label">Klub</label>
-                        <select class="form-select" id="edit_klub_ID" name="klub_ID" required>
-                            <option value="">Odaberi klub</option>
-                            <?php 
-                            // Reset pointer for klubovi_options
-                            mysqli_data_seek($klubovi_options, 0);
-                            while ($klub = mysqli_fetch_assoc($klubovi_options)): ?>
-                                <option value="<?= htmlspecialchars($klub['ID_kluba']) ?>"><?= htmlspecialchars($klub['naziv']) ?></option>
-                            <?php endwhile; ?>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle"></i> Zatvori</button>
-                    <button type="submit" name="azuriraj_igraca" class="btn btn-primary"><i class="bi bi-save"></i> Spremi promjene</button>
-                </div>
-            </form>
+    <?php unset($_SESSION['errors']); ?>
+  <?php endif; ?>
+
+  <?php if(empty($igraci)): ?>
+    <div style="text-align:center;padding:60px;color:var(--c-muted)">Nema igrača u bazi</div>
+  <?php else: ?>
+    <?php $di=0; foreach($igraci as $kn=>$players): 
+      $klub_logo = $players[0]['klub_logo'] ?? null;
+    ?>
+    <div class="card" style="margin-bottom:18px;animation:fadeUp .4s <?=$di*80?>ms ease both">
+      <div class="card-head">
+        <div class="club-header">
+          <?php if(!empty($klub_logo)): ?>
+            <img src="<?=htmlspecialchars($klub_logo)?>" alt="<?=htmlspecialchars($kn)?>" class="club-logo-small">
+          <?php else: ?>
+            <span style="font-size:24px;">🛡️</span>
+          <?php endif; ?>
+          <span class="card-head-title"><?=htmlspecialchars($kn)?></span>
         </div>
+        <span style="font-size:12px;color:var(--c-muted);font-weight:500"><?=count($players)?> igrača</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Ime i prezime</th>
+              <th>Datum rođenja</th>
+              <th>Pozicija</th>
+              <?php if($isAdmin): ?><th style="text-align:right">Akcije</th><?php endif; ?>
+            </tr>
+          </thead>
+          <tbody>
+          <?php foreach($players as $ig): ?>
+            <tr>
+              <td>
+                <div style="font-weight:600;font-size:14px">
+                  <?=htmlspecialchars(trim($ig['ime']).' '.trim($ig['prezime']))?>
+                </div>
+              </td>
+              <td style="color:var(--c-muted);font-size:13px">
+                <?=date('d.m.Y.',strtotime($ig['datum_rodenja']))?>
+              </td>
+              <td>
+                <span class="badge <?=pb($ig['pozicija'])?>"><?=htmlspecialchars(trim($ig['pozicija']))?></span>
+              </td>
+             <?php if($isAdmin): ?>
+<td style="text-align:right">
+    <a href="obrisi_igrac.php?id=<?=$ig['ID_igraca']?>" class="icon-btn del" title="Obriši igrača"
+       onclick="return confirm('Obrisati igrača? Ova radnja je nepovratna.')">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M9 6V4h6v2"/>
+        </svg>
+    </a>
+</td>
+<?php endif; ?>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
     </div>
+    <?php $di++; endforeach; ?>
+  <?php endif; ?>
+
+</div>
 </div>
 
-<!-- JavaScript za popunjavanje modala s podacima -->
+<?php if($isAdmin): ?>
+<!-- MODAL: Dodaj igrača -->
+<div class="overlay" id="mo-dodaj" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">Novi igrač</div>
+    <button class="modal-close" onclick="document.getElementById('mo-dodaj').classList.remove('open')">✕</button>
+    <form action="dohvati_igraca.php" method="POST">
+      <div class="fg-row">
+        <div class="fg"><label>Ime</label><input type="text" name="ime" required></div>
+        <div class="fg"><label>Prezime</label><input type="text" name="prezime" required></div>
+      </div>
+      <div class="fg"><label>Datum rođenja</label><input type="date" name="datum_rodenja" required></div>
+      <div class="fg">
+        <label>Pozicija</label>
+        <select name="pozicija" required>
+          <option value="">Odaberi poziciju</option>
+          <option value="golman">Golman</option>
+          <option value="lijevo krilo">Lijevo krilo</option>
+          <option value="desno krilo">Desno krilo</option>
+          <option value="lijevi vanjski">Lijevi vanjski</option>
+          <option value="desni vanjski">Desni vanjski</option>
+          <option value="srednji vanjski">Srednji vanjski</option>
+          <option value="pivot">Pivot</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Klub</label>
+        <select name="klub_ID" required>
+          <option value="">Odaberi klub</option>
+          <?php while($k=mysqli_fetch_assoc($kl_opts)): ?>
+            <option value="<?=$k['ID_kluba']?>"><?=htmlspecialchars($k['naziv'])?></option>
+          <?php endwhile; ?>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('mo-dodaj').classList.remove('open')">Odustani</button>
+        <button type="submit" name="dodaj_igraca" class="btn btn-primary">Spremi igrača</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Uredi igrača -->
+<div class="overlay" id="mo-uredi" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-title">Uredi igrača</div>
+    <button class="modal-close" onclick="document.getElementById('mo-uredi').classList.remove('open')">✕</button>
+    <form action="edit_igrac.php" method="POST">
+      <input type="hidden" name="ID_igraca" id="e_id">
+      <div class="fg-row">
+        <div class="fg"><label>Ime</label><input type="text" name="ime" id="e_ime" required></div>
+        <div class="fg"><label>Prezime</label><input type="text" name="prezime" id="e_prz" required></div>
+      </div>
+      <div class="fg"><label>Datum rođenja</label><input type="date" name="datum_rodenja" id="e_dat" required></div>
+      <div class="fg">
+        <label>Pozicija</label>
+        <select name="pozicija" id="e_poz" required>
+          <option value="">Odaberi poziciju</option>
+          <option value="golman">Golman</option>
+          <option value="lijevo krilo">Lijevo krilo</option>
+          <option value="desno krilo">Desno krilo</option>
+          <option value="lijevi vanjski">Lijevi vanjski</option>
+          <option value="desni vanjski">Desni vanjski</option>
+          <option value="srednji vanjski">Srednji vanjski</option>
+          <option value="pivot">Pivot</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>Klub</label>
+        <select name="klub_ID" id="e_kl" required>
+          <option value="">Odaberi klub</option>
+          <?php mysqli_data_seek($kl_opts,0); while($k=mysqli_fetch_assoc($kl_opts)): ?>
+            <option value="<?=$k['ID_kluba']?>"><?=htmlspecialchars($k['naziv'])?></option>
+          <?php endwhile; ?>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="document.getElementById('mo-uredi').classList.remove('open')">Odustani</button>
+        <button type="submit" name="azuriraj_igraca" class="btn btn-primary">Spremi promjene</button>
+      </div>
+    </form>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Kada se klikne na link za uređivanje
-    document.querySelectorAll('a[href^="edit_igrac.php"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Dohvati ID igrača iz URL-a
-            const url = new URL(this.href);
-            const id = url.searchParams.get('id');
-            
-            // AJAX za dohvaćanje podataka o igraču
-            fetch(`dohvati_igraca.php?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Popuni formu u modalu
-                    document.getElementById('edit_ID_igraca').value = data.ID_igraca;
-                    document.getElementById('edit_ime').value = data.ime;
-                    document.getElementById('edit_prezime').value = data.prezime;
-                    document.getElementById('edit_datum_rodenja').value = data.datum_rodenja;
-                    document.getElementById('edit_pozicija').value = data.pozicija;
-                    document.getElementById('edit_klub_ID').value = data.klub_ID;
-                    
-                    // Prikaži modal
-                    const modal = new bootstrap.Modal(document.getElementById('editIgracModal'));
-                    modal.show();
-                })
-                .catch(error => console.error('Greška:', error));
-        });
+<?php if($isAdmin): ?>
+document.querySelectorAll('a[href^="edit_igrac.php"]').forEach(a=>{
+  a.addEventListener('click',function(e){
+    e.preventDefault();
+    const id=new URL(this.href).searchParams.get('id');
+    fetch(`dohvati_igraca.php?id=${id}`).then(r=>r.json()).then(d=>{
+      document.getElementById('e_id').value=d.ID_igraca;
+      document.getElementById('e_ime').value=d.ime;
+      document.getElementById('e_prz').value=d.prezime;
+      document.getElementById('e_dat').value=d.datum_rodenja;
+      document.getElementById('e_poz').value=d.pozicija;
+      document.getElementById('e_kl').value=d.klub_ID;
+      document.getElementById('mo-uredi').classList.add('open');
     });
+  });
 });
+<?php endif; ?>
 </script>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-<?php
-mysqli_close($conn);
-?>
+<?php mysqli_close($conn); ?>

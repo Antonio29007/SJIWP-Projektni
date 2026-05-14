@@ -1,131 +1,117 @@
 <?php
 include("db_connection.php");
+include("auth.php");
+requireLogin();
+$isAdmin = isAdmin();
 
-$sql = "SELECT ID_kluba, naziv, datum_osnivanja, mjesto, ukupni_bodovi FROM klub ORDER BY ukupni_bodovi DESC";
-$result = mysqli_query($conn, $sql);
-
-if (mysqli_num_rows($result) > 0) {
-    $klubovi = mysqli_fetch_all($result, MYSQLI_ASSOC);
-} else {
-    $klubovi = [];
-}
+$klubovi = mysqli_fetch_all(mysqli_query($conn,
+    "SELECT ID_kluba, naziv, datum_osnivanja, mjesto, ukupni_bodovi, logo FROM klub ORDER BY ukupni_bodovi DESC"),
+    MYSQLI_ASSOC);
+$max_b = !empty($klubovi) ? max(array_column($klubovi,'ukupni_bodovi')) : 1;
 ?>
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rukometna Liga - Timovi</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
-    <style>
-        .card { transition: transform 0.2s; }
-        .card:hover { transform: translateY(-5px); }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rukometna Liga — Klubovi</title>
+<?php include("style.php"); ?>
 </head>
 <body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Lijeva navigacija -->
-            <div class="col-md-3 col-lg-2 d-flex flex-column flex-shrink-0 p-3 bg-primary text-white" style="height: 100vh;">
-                <a href="index.php" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
-                    <i class="bi bi-trophy-fill fs-4 me-2"></i>
-                    <span class="fs-4">Rukometna Liga</span>
-                </a>
-                <hr class="border border-white">
-                <ul class="nav nav-pills flex-column mb-auto">
-                    <li class="nav-item">
-                        <a href="index.php" class="nav-link text-white">
-                            <i class="bi bi-house-door me-2"></i>
-                            Početna
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="utakmice.php" class="nav-link text-white">
-                            <i class="bi bi-calendar-event me-2"></i>
-                            Utakmice
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="timovi.php" class="nav-link text-white bg-dark active">
-                            <i class="bi bi-people-fill me-2"></i>
-                            Timovi
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="igraci.php" class="nav-link text-white">
-                            <i class="bi bi-person-badge me-2"></i>
-                            Igrači
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="ljestvica.php" class="nav-link text-white">
-                            <i class="bi bi-list-ol me-2"></i>
-                            Ljestvica
-                        </a>
-                    </li>
-                </ul>
-            </div>
+<?php include("sidebar.php"); ?>
+<div class="page">
+<div class="page-inner">
 
-            <!-- Glavni sadržaj -->
-            <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4 py-4">
-                <h1 class="mb-4"><i class="bi bi-people-fill"></i> Popis Timova</h1>
-                
-                <?php if (empty($klubovi)): ?>
-                    <div class="alert alert-info">Nema podataka o klubovima u bazi.</div>
-                <?php else: ?>
-                    <div class="row">
-                        <?php foreach ($klubovi as $klub): ?>
-                            <div class="col-md-4 mb-4">
-                                <div class="card h-100 shadow-sm">
-                                    <div class="card-body text-center">
-                                        <h5 class="card-title"><?= htmlspecialchars($klub['naziv']) ?></h5>
-                                        <p class="card-text">
-                                            <i class="bi bi-geo-alt"></i> <?= htmlspecialchars($klub['mjesto']) ?><br>
-                                            <i class="bi bi-calendar"></i> <?= date('d.m.Y', strtotime($klub['datum_osnivanja'])) ?><br>
-                                            <i class="bi bi-trophy"></i> <?= htmlspecialchars($klub['ukupni_bodovi']) ?> bodova
-                                        </p>
-                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#timModal<?= $klub['ID_kluba'] ?>">
-                                            <i class="bi bi-info-circle"></i> Detalji
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+  <div class="pg-head">
+    <div>
+      <h1 class="pg-title">Klubovi</h1>
+    </div>
+  </div>
 
-                            <!-- Modal za svaki tim -->
-                            <div class="modal fade" id="timModal<?= $klub['ID_kluba'] ?>" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title"><?= htmlspecialchars($klub['naziv']) ?></h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <ul class="list-group">
-                                                <li class="list-group-item">
-                                                    <i class="bi bi-geo-alt"></i> Mjesto: <?= htmlspecialchars($klub['mjesto']) ?>
-                                                </li>
-                                                <li class="list-group-item">
-                                                    <i class="bi bi-calendar"></i> Datum osnivanja: <?= date('d.m.Y', strtotime($klub['datum_osnivanja'])) ?>
-                                                </li>
-                                                <li class="list-group-item">
-                                                    <i class="bi bi-trophy"></i> Bodovi: <?= htmlspecialchars($klub['ukupni_bodovi']) ?>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+  <?php if(isset($_SESSION['success'])): ?>
+    <div class="alert alert-ok">✓ <?=htmlspecialchars($_SESSION['success'])?></div>
+    <?php unset($_SESSION['success']); ?>
+  <?php endif; ?>
+  <?php if(isset($_SESSION['errors'])): ?>
+    <div class="alert alert-err">
+      <?php foreach($_SESSION['errors'] as $e): ?><?=htmlspecialchars($e)?><br><?php endforeach; ?>
+    </div>
+    <?php unset($_SESSION['errors']); ?>
+  <?php endif; ?>
+
+  <?php if(empty($klubovi)): ?>
+    <div style="text-align:center;padding:60px;color:var(--c-muted2)">Nema klubova</div>
+  <?php else: ?>
+  <div class="team-grid">
+    <?php foreach($klubovi as $i=>$k): ?>
+    <div class="team-card" style="animation-delay:<?=$i*50?>ms" onclick="document.getElementById('tm-<?=$k['ID_kluba']?>').classList.add('open')">
+      
+      <!-- Prikaz logoa -->
+      <div class="team-logo">
+        <?php if (!empty($k['logo'])): ?>
+          <img src="<?= htmlspecialchars($k['logo']) ?>" alt="<?= htmlspecialchars($k['naziv']) ?>" style="width:100%;height:100%;object-fit:cover;">
+        <?php else: ?>
+          <span style="font-size:28px;">🛡️</span>
+        <?php endif; ?>
+      </div>
+      
+      <div class="team-card-rank">#<?=$i+1?> <?=$i===0?'· 🏆 Lider':''?></div>
+      <div class="team-card-name"><?=htmlspecialchars($k['naziv'])?></div>
+      <div class="team-card-meta">
+        <span>📍 <?=htmlspecialchars($k['mjesto'])?></span>
+        <span>📅 od <?=date('Y.',strtotime($k['datum_osnivanja']))?></span>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <div class="team-pts"><?=$k['ukupni_bodovi']?></div>
+        <div style="font-size:13px;color:var(--c-muted);font-weight:500">bod.</div>
+      </div>
+      <div class="pts-bar-bg">
+        <div class="pts-bar" style="width:<?=round(($k['ukupni_bodovi']/max($max_b,1))*100)?>%"></div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Modal -->
+    <div class="overlay" id="tm-<?=$k['ID_kluba']?>" onclick="if(event.target===this)this.classList.remove('open')">
+      <div class="modal" style="max-width:400px">
+        <div class="modal-title"><?=htmlspecialchars($k['naziv'])?></div>
+        <button class="modal-close" onclick="document.getElementById('tm-<?=$k['ID_kluba']?>').classList.remove('open')">✕</button>
+        
+        <!-- Logo u modalu -->
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="width:100px;height:100px;margin:0 auto;background:var(--c-surface2);border-radius:16px;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-border);overflow:hidden;">
+            <?php if (!empty($k['logo'])): ?>
+              <img src="<?= htmlspecialchars($k['logo']) ?>" alt="<?= htmlspecialchars($k['naziv']) ?>" style="width:100%;height:100%;object-fit:cover;">
+            <?php else: ?>
+              <span style="font-size:40px;">🛡️</span>
+            <?php endif; ?>
+          </div>
+        </div>
+        
+        <div style="display:grid;gap:10px">
+          <div style="background:var(--c-surface2);border:1px solid var(--c-border2);border-radius:9px;padding:14px 16px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c-muted2);margin-bottom:5px">Grad</div>
+            <div style="font-weight:600"><?=htmlspecialchars($k['mjesto'])?></div>
+          </div>
+          <div style="background:var(--c-surface2);border:1px solid var(--c-border2);border-radius:9px;padding:14px 16px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c-muted2);margin-bottom:5px">Osnovano</div>
+            <div style="font-weight:600"><?=date('d.m.Y.',strtotime($k['datum_osnivanja']))?></div>
+          </div>
+          <div style="background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.2);border-radius:9px;padding:18px 16px;text-align:center">
+            <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c-muted2);margin-bottom:8px">Ukupni bodovi</div>
+            <div style="font-family:'Anton',sans-serif;font-size:46px;color:var(--c-primary);line-height:1"><?=$k['ukupni_bodovi']?></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="document.getElementById('tm-<?=$k['ID_kluba']?>').classList.remove('open')">Zatvori</button>
+        </div>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
+
+</div>
+</div>
 </body>
 </html>
-<?php
-mysqli_close($conn);
-?>
+<?php mysqli_close($conn); ?>
